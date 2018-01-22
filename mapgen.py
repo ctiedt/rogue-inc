@@ -12,13 +12,34 @@ dist_euclidean = lambda x, y: (sum((p - q)**2 for p, q in zip(x, y)))**0.5
 
 class MapGenerator:
 
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug=debug
         self.mp = [[0 for y in range(48)] for x in range(48)] #Erstelle einen 2D-Array 48x48 aus Nullen; die Karte hat *immer* die Größe 48x48
         self.path = self.gen_path()
 
     def gen_path(self):
         m = [(x, y) for x in range(3) for y in range(3)]
-        starp, stop = random.sample(m, 2)
+        start, stop = random.sample(m, 2)
+        path = []
+        if self.debug:
+            print(str(start)+", "+str(stop))
+        mdists = [[dist_manhattan((x, y), stop) for y in range(3)] for x in range(3)]
+        cpos = start
+        while cpos != stop:
+            neighbours = []
+            if cpos[0] > 0:
+                neighbours.append((cpos[0] - 1, cpos[1]))
+            if cpos[0] < 3:
+                neighbours.append((cpos[0] + 1, cpos[1]))
+            if cpos[1] > 0:
+                neighbours.append((cpos[0], cpos[1] - 1))
+            if cpos[1] < 3:
+                neighbours.append((cpos[0], cpos[1] + 1))
+            dists = [mdists[n[0]][n[1]] for n in neighbours]
+            if self.debug:
+                print(neighbours)
+                print(dists)
+            cpos = neighbours[dists.index(min(dists))]
 
     def map_as_string(self): #2D-Array in String mit Zeilenenden umwandeln
         return "\n".join(["".join(str(e) for e in row) for row in self.mp])
