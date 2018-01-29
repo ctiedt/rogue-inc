@@ -18,38 +18,29 @@ class MapGenerator:
         self.path = self.gen_path()
 
     def gen_path(self):
-        m = [[0 for x in range(3)] for y in range(3)]
-        start, stop = random.sample(m, 2)
-        path = []
-        if self.debug:
-            print(str(start)+", "+str(stop))
-        mdists = [[dist_manhattan((x, y), stop) for y in range(3)] for x in range(3)]
-        cpos = start
-        while cpos != stop:
-            neighbours = []
-            if cpos[0] > 0:
-                neighbours.append((cpos[0] - 1, cpos[1]))
-            if cpos[0] < 2:
-                neighbours.append((cpos[0] + 1, cpos[1]))
-            if cpos[1] > 0:
-                neighbours.append((cpos[0], cpos[1] - 1))
-            if cpos[1] < 2:
-                neighbours.append((cpos[0], cpos[1] + 1))
-            dists = [mdists[n[0]][n[1]] for n in neighbours]
-            if self.debug:
-                print(neighbours)
-                print(dists)
-            nextn = neighbours[dists.index(min(dists))]
-            if nextn[0] - cpos[0] > 0:
-                m[cpos[0]][cpos[1]] = "e"
-            if nextn[0] - cpos[0] < 0:
-                m[cpos[0]][cpos[1]] = "w"
-            if nextn[1] - cpos[1] > 0:
-                m[cpos[0]][cpos[1]] = "m"
-            if nextn[1] - cpos[1] < 0:
-                m[cpos[0]][cpos[1]] = "s"
-            cpos = nextn
-        return m
+        cpos = [random.randint(0, 2), 0]
+        start = cpos.copy()
+        path = ""
+        while cpos[1] < 3: #Generator "bewegt" sich, bis er den y-Wert 3 erreicht nach unten 
+            movements = [(0, 1)] #Bewegung nach unten ist immer erlaubt
+            if cpos[0] > 0: #Wenn möglich, Bewegung nach links erlauben
+                    movements.append((-1, 0))
+                    movements.append((-1, 0))
+            if cpos[0] < 2: #Wenn möglich, Bewegung nach rechts erlauben
+                    movements.append((1, 0))
+                    movements.append((1, 0))
+            mv = random.choice(movements) #Bewegung nach l/r sind zweimal so wahrscheinlich, wie Bewegung nach unten
+            if mv in [(-1, 0), (1, 0)]: #Bewegungen nach l/r können in einer Reihe stattfinden
+                    while cpos[0] + m[0] < 2 and cpos[0] + m[0] > 0 and random.randint(0, 1):
+                            cpos = [cpos[0] + m[0], cpos[1] + m[1]] #Aktualisiere Position
+                            if m == (-1, 0):
+                                    path += "w" #Wenn eine Bewegung ausgeführt wird, wird sie dem Weg hinzugefügt
+                            else:
+                                    path += "e"
+            else:
+                    cpos = [cpos[0] + m[0], cpos[1] + m[1]]
+                    path += "s"
+        return path[:-1], start #Da der letzte Schritt im Pfad einen Schritt zu weit nach unten geht, wird er entfernt.
 
     def map_as_string(self): #2D-Array in String mit Zeilenenden umwandeln
         return "\n".join(["".join(str(e) for e in row) for row in self.mp])
@@ -58,13 +49,14 @@ class MapGenerator:
         return [[int(text[x + y]) for y in range(48) if text[x + y] != "\n"] for x in range(48)]
 
     def save(self, path): #Karte in der Datei Path speichern
-        """Loads the map from a zip file"""
-        #TODO: Abfrage, ob Datei schon existiert
-        #TODO: Überprüfen, ob Archiv nötige Dateien enthält
+        """Save the map to a zip file"""
         with zipfile.ZipFile(path, "w") as zf:
             zf.writestr("/map.txt", self.map_as_string())
 
     def load(self, path): #Karte aus der Datei path laden
+        """Loads the map from a zip file"""
+        #TODO: Abfrage, ob Datei schon existiert
+        #TODO: Überprüfen, ob Archiv nötige Dateien enthält
         with zipfile.ZipFile(path) as zf:
             with zf.open("/map.txt") as mapfile:
                 self.mp = self.convert_string_map(mapfile.read().decode())
