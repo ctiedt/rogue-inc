@@ -3,8 +3,7 @@
 #Sprint I
 #_d Clemens Tiedt
 
-import random
-import zipfile
+import random, zipfile, json
 
 #Verschiedene allgemeine Utensilien
 
@@ -15,15 +14,18 @@ OPPOSITE_DIRECTIONS = {"n":"s", "s":"n", "e":"w", "w":"e"}
 
 class MapGenerator:
 
-    def __init__(self, debug=False):
-        self.debug=debug
-        self.mp = [[1 for y in range(45)] for x in range(45)] #Erstelle einen 2D-Array 45x45 aus Nullen; die Karte hat *immer* die Größe 45x45
-        self.path = self.gen_path()
-        self.generate_rooms()
-        #Metdaten:
-        self.start = (self.path[1][0] + 7, self.path[1][1] + 7)
-        self.end = None
-        self.name = self.generate_name()
+    def __init__(self, path=None, debug=False):
+        if path is None:
+            self.debug=debug
+            self.mp = [[1 for y in range(45)] for x in range(45)] #Erstelle einen 2D-Array 45x45 aus Nullen; die Karte hat *immer* die Größe 45x45
+            self.path = self.gen_path()
+            self.end = None #Muss hierhin, weil es sonst die Änderung in self.generate_rooms() überschreibt...
+            self.generate_rooms()
+            #Metdaten:
+            self.start = (self.path[1][0] + 7, self.path[1][1] + 7)
+            self.name = self.generate_name()
+        else:
+            self.load(path)
 
     def generate_name(self):
         """Generiert einen Bezeichner für die Map"""
@@ -82,6 +84,8 @@ class MapGenerator:
     def generate_rooms(self):
         cpos = self.path[1]
         for i, letter in enumerate(self.path[0]):
+            if self.debug:
+                print(i)
             spos = [cpos[0]*15, cpos[1]*15]
             entrances = ""
             entrances += letter
@@ -109,6 +113,7 @@ class MapGenerator:
         """Speichert die Karte als Zip-Datei"""
         with zipfile.ZipFile(path, "w") as zf:
             zf.writestr("/map.txt", self.map_as_string())
+            zf.writestr("/meta.json", json.dumps({k: self.__dict__[k] for k in self.__dict__ if k != "mp"}))
 
     def load(self, path):
         """Lädt die Karte aus einer Zip-Datei"""
@@ -117,3 +122,9 @@ class MapGenerator:
         with zipfile.ZipFile(path) as zf:
             with zf.open("/map.txt") as mapfile:
                 self.mp = self.convert_string_map(mapfile.read().decode())
+            with zf.open("/meta.json") as metafile:
+                contents = metafile.read().decode()
+                for k in json.loads(contents):
+                    if k not in self.__dict__.keys():
+                        self.__dict__[k] = json.loads(contents)[k]
+                    
