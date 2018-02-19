@@ -3,7 +3,7 @@
 #Sprint I
 #_d Clemens Tiedt
 
-import random, zipfile, json
+import random, zipfile, json, os
 
 #Verschiedene allgemeine Utensilien
 
@@ -15,14 +15,14 @@ OPPOSITE_DIRECTIONS = {"n":"s", "s":"n", "e":"w", "w":"e"}
 class MapGenerator:
 
     def __init__(self, path=None, debug=False):
+        self.debug=debug
         if path is None:
-            self.debug=debug
             self.mp = [[1 for y in range(45)] for x in range(45)] #Erstelle einen 2D-Array 45x45 aus Nullen; die Karte hat *immer* die Größe 45x45
             self.path = self.gen_path()
             self.end = None #Muss hierhin, weil es sonst die Änderung in self.generate_rooms() überschreibt...
             self.generate_rooms()
             #Metdaten:
-            self.start = (self.path[1][0] + 7, self.path[1][1] + 7)
+            self.start = ((self.path[1][0] * 15) + 7, (self.path[1][1] * 15) + 7)
             self.name = self.generate_name()
         else:
             self.load(path)
@@ -63,7 +63,7 @@ class MapGenerator:
         return path[:-1], start #_d Da der letzte Schritt im Pfad einen Schritt zu weit nach unten geht, wird er entfernt.
 
     def generate_room(self, entrances, sx, sy):
-        """Generates a room with entrances/exits in the specified directions starting at (sx|sy)"""
+        """Generiert einen Raum mit Eingängen/Ausgängen an den gegebenen Seiten, der bei (sx|sy) beginnt"""
         if "n" in entrances:
             for x in range(5, 10):
                 for y in range(10):
@@ -82,19 +82,20 @@ class MapGenerator:
                     self.mp[sx+x][sy+y] = 0
 
     def generate_rooms(self):
+        """Generiert zusammenhängend alle Räume, die auf dem Weg liegen müssen"""
         cpos = self.path[1]
-        for i, letter in enumerate(self.path[0]):
-            if self.debug:
+        for i, letter in enumerate(self.path[0]): #Gehe den Weg durch
+            if self.debug: 
                 print(i)
             spos = [cpos[0]*15, cpos[1]*15]
             entrances = ""
-            entrances += letter
+            entrances += letter #Ein Ausgang ist durch den Weg gegeben
             if i > 0:
-                entrances += OPPOSITE_DIRECTIONS[self.path[0][i-1]]
+                entrances += OPPOSITE_DIRECTIONS[self.path[0][i-1]] #Alle Räume außer dem ersten besitzen einen Eingang gegenüber dem Nachbarraum
             self.generate_room(entrances, spos[0], spos[1])
             if i == len(self.path[0]) - 1:
-                self.end = (spos[0] + 7, spos[1] + 7)
-            if letter == "s":
+                self.end = (spos[0] + 7, spos[1] + 7) #Legt für Metadaten fest, wo das Ziel des Levels liegt
+            if letter == "s": #Gehe der Richtung entsprechend nach unten, rechts, oder links
                 cpos = [cpos[0], cpos[1]+1]
             if letter == "e":
                 cpos = [cpos[0]+1, cpos[1]]
@@ -113,18 +114,19 @@ class MapGenerator:
         """Speichert die Karte als Zip-Datei"""
         with zipfile.ZipFile(path, "w") as zf:
             zf.writestr("/map.txt", self.map_as_string())
-            zf.writestr("/meta.json", json.dumps({k: self.__dict__[k] for k in self.__dict__ if k != "mp"}))
+            meta = json.dumps({k: self.__dict__[k] for k in self.__dict__ if k != "mp"})
+            zf.writestr("/meta.json", meta)
 
     def load(self, path):
         """Lädt die Karte aus einer Zip-Datei"""
-        #_d TODO: Abfrage, ob Datei tatsächlich existiert
-        #_d TODO: Überprüfen, ob Archiv nötige Dateien enthält
-        with zipfile.ZipFile(path) as zf:
-            with zf.open("/map.txt") as mapfile:
-                self.mp = self.convert_string_map(mapfile.read().decode())
-            with zf.open("/meta.json") as metafile:
-                contents = metafile.read().decode()
-                for k in json.loads(contents):
-                    if k not in self.__dict__.keys():
-                        self.__dict__[k] = json.loads(contents)[k]
-                    
+        try:
+            with zipfile.ZipFile(path) as zf:
+                with zf.open("/map.txt") as mapfile:
+                    self.mp = self.convert_string_map(mapfile.read().decode())
+                with zf.open("/meta.json") as metafile:
+                    contents = metafile.read().decode()
+                    for k in json.loads(contents):
+                        if k not in self.__dict__.keys():
+                            self.__dict__[k] = json.loads(contents)[k]
+        except FileNotFoundError as err:
+            print(err)

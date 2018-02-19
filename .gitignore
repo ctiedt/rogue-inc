@@ -100,3 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 /map2.zip
+/Planung/map.txt
+/Planung/meta.json
+/__init__.py
+/map3.zip
+/path.zip
+/path.zip.hash
