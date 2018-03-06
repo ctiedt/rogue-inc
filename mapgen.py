@@ -17,11 +17,13 @@ class MapGenerator:
     def __init__(self, path=None, debug=False):
         self.debug=debug
         if path is None:
-            self.mp = [[1 for y in range(45)] for x in range(45)] #Erstelle einen 2D-Array 45x45 aus Nullen; die Karte hat *immer* die Größe 45x45
+            self.mp = [[1 for y in range(45)] for x in range(45)] #Erstelle einen 2D-Array 45x45 aus Einsen; die Karte hat *immer* die Größe 45x45
+            self.enemies = [] #Liste der Positionen, an denen Feinde gespawnt werden
+            self.gold = [] #Liste der Positionen, an denen Goldstücke liegen
             self.path = self.gen_path()
             self.end = None #Muss hierhin, weil es sonst die Änderung in self.generate_rooms() überschreibt...
             self.generate_rooms()
-            #Metdaten:
+            #Metadaten:
             self.start = ((self.path[1][0] * 15) + 7, (self.path[1][1] * 15) + 7)
             self.name = self.generate_name()
         else:
@@ -33,7 +35,7 @@ class MapGenerator:
         #syllables = ["An", "Ab", "Ar", "Ur", "Un", "Kan", "Lor", "Wun", "Wil", "Har", "Hor", "Ko", "Luz", "Laz", "Ban"]
         syllables = [i + j for i in "BCDFGHJKLMNPQRSTVWXYZ" for j in "aeiou"] + [i + j for i in "AEIOU" for j in "bcdfghjklmnpqrstvwxyz"]
         owner = random.choice(syllables) + random.choice(("", "-")) + random.choice(syllables).lower()
-        title = random.choice(("Abominable", "Cruel", "Cunning", "Crazy", "Reasonable", "Traitor"))
+        title = random.choice(("Abominable", "Cruel", "Cunning", "Crazy", "Reasonable", "Traitor", "Regent"))
         return "{} of {} the {}".format(type_, owner, title)
 
     def gen_path(self):
@@ -50,7 +52,7 @@ class MapGenerator:
                     movements.append((1, 0))
                     movements.append((1, 0))
             mv = random.choice(movements) #Bewegung nach l/r sind zweimal so wahrscheinlich, wie Bewegung nach unten
-            if mv in [(-1, 0), (1, 0)]: #Bewegungen nach l/r können in einer Reihe stattfinden
+            if mv in [(-1, 0), (1, 0)]: #Bewegungen nach l/r können mehrmals hintereinander stattfinden
                     while cpos[0] + mv[0] < 2 and cpos[0] + mv[0] > 0 and random.randint(0, 1):
                             cpos = [cpos[0] + mv[0], cpos[1] + mv[1]] #Aktualisiere Position
                             if mv == (-1, 0):
@@ -64,22 +66,36 @@ class MapGenerator:
 
     def generate_room(self, entrances, sx, sy):
         """Generiert einen Raum mit Eingängen/Ausgängen an den gegebenen Seiten, der bei (sx|sy) beginnt"""
+        enemy_spawned = False
+        gold_spawned = False
         if "n" in entrances:
             for x in range(5, 10):
                 for y in range(10):
                     self.mp[sx+x][sy+y] = 0
+            if not enemy_spawned and random.randint(0, 1):
+                self.enemies.append((sx + 7, sy + 5))
+                enemy_spawned = True
         if "e" in entrances:
             for x in range(5, 15):
                 for y in range(5, 10):
                     self.mp[sx+x][sy+y] = 0
+            if not enemy_spawned and random.randint(0, 1):
+                self.enemies.append((sx + 10, sy + 7))
+                enemy_spawned = True
         if "s" in entrances:
             for x in range(5, 10):
                 for y in range(5, 15):
                     self.mp[sx+x][sy+y] = 0
+            if not enemy_spawned and random.randint(0, 1):
+                self.enemies.append((sx + 7, sy + 10))
+                enemy_spawned = True
         if "w" in entrances:
             for x in range(10):
                 for y in range(5, 10):
                     self.mp[sx+x][sy+y] = 0
+            if not enemy_spawned and random.randint(0, 1):
+                self.enemies.append((sx + 5, sy + 7))
+                enemy_spawned = True
 
     def generate_rooms(self):
         """Generiert zusammenhängend alle Räume, die auf dem Weg liegen müssen"""
