@@ -1,4 +1,5 @@
 \documentclass{article}
+\usepackage{listings}
 \title{Designgrundlagen und Anforderungen von Rogue Inc.}
 \author{Clemens Tiedt, Felix Bachstein, Jonas Tresper}
 \date{15-01-2018}
@@ -14,6 +15,16 @@ Ziel des ersten Sprints ist eine lauffähige Version, die in einer rudimentären
 Zu diesem Zweck wird das Mapformat spezifiziert und implementiert sowie die Generierung von Karten mit Pfad von Anfang bis Ende anhand von Templates implementiert.
 Der Charakter kann durch Bewegungstasten gesteuert werden und kann sich korrekt auf der Karte bewegen. 
 Die Laufzeitumgebung kann den Charakter korrekt bewegen sowie seine Position und die Karte im aktuellen Zustand speichern und laden.
+
+\section{Klassen und ihre Funktion}
+\subsection{MapGenerator}
+Wie jedes Roguelike generiert Rogue Inc. seine Karten selbst. Das geschieht in der Klasse \verb|MapGenerator|. Karten haben dort stets die Größe 45x45 Felder. Die Generierung orientiert sich an dem Platformer "Spelunky". Die Karte ist in drei Quadrate der Größe 15x15 eingeteilt. Die Funktion \verb|MapGenerator.gen_path()| legt fest, über welche Felder das Level verläuft. In \verb|MapGenerator.generate_rooms()| werden die Räume in der Karte "freigelegt". Abschließend werden als Metadaten die Anfangsposition des Spielers, das Zielfeld und ein Name für die Map festgelegt.
+
+\subsection{Player}
+Die Klasse \verb|Player| stellt den Spieler bereit, der über seine Position, seine Lebens- und Angriffspunkte und seine Anzahl an gesammelten Goldstücken gekennzeichnet wird. Nach jeder Tastatureingabe in der Laufzeitumgebung wird \verb|Player.update()| aufgerufen, das zuerst seine Angriffspunkte neu berechnet, dann eventuelle Bewegungen ausführt und abschließend Angriffe ausführt. Stirbt der Spieler, gibt er dies über \verb|Player.on_killed()| an die Laufzeitumgebung zurück.
+
+\subsection{Runtime}
+Über \verb|Runtime| ist die Laufzeitumgebung definiert, die Eingaben verarbeitet, die Spielelemente darstellt und für das Speichern und Laden zuständig ist.
 
 
 \end{document}
