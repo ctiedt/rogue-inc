@@ -1,6 +1,6 @@
 #_d Project: Rogue Inc.
 #_d Class: Map Generator
-#Sprint I
+#Sprint II
 #_d Clemens Tiedt
 
 import random, zipfile, json, os
